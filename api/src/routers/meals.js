@@ -3,10 +3,68 @@ import db from "../database_client.js";
 
 const router = express.Router();
 
-// GET /api/meals - Return all meals
+// GET /api/meals - Return all meals with query parameters
 router.get("/", async (req, res) => {
   try {
-    const meals = await db("meal").select("*");
+    const {
+      maxPrice,
+      availableReservations,
+      title,
+      dateAfter,
+      dateBefore,
+      limit,
+      sortKey,
+      sortDir,
+    } = req.query;
+
+    let query = db("meal").select("*");
+
+    // Apply filters
+    if (maxPrice) {
+      query = query.where("price", "<=", Number(maxPrice));
+    }
+
+    if (title) {
+      query = query.where("title", "like", `%${title}%`);
+    }
+
+    if (dateAfter) {
+      query = query.where("when", ">", dateAfter);
+    }
+
+    if (dateBefore) {
+      query = query.where("when", "<", dateBefore);
+    }
+
+    if (availableReservations !== undefined) {
+      const subquery = db("meal")
+        .leftJoin("reservation", "meal.id", "reservation.meal_id")
+        .groupBy("meal.id")
+        .select("meal.id")
+        .havingRaw("meal.max_reservations > COUNT(reservation.id)");
+
+      if (availableReservations === "true") {
+        query = query.whereIn("id", subquery);
+      } else {
+        query = query.whereNotIn("id", subquery);
+      }
+    }
+
+    // Apply sorting
+    if (sortKey) {
+      const validSortKeys = ["when", "max_reservations", "price"];
+      if (validSortKeys.includes(sortKey)) {
+        const direction = sortDir?.toLowerCase() === "desc" ? "desc" : "asc";
+        query = query.orderBy(sortKey, direction);
+      }
+    }
+
+    // Apply limit
+    if (limit) {
+      query = query.limit(Number(limit));
+    }
+
+    const meals = await query;
     res.json(meals);
   } catch (error) {
     res.status(500).json({ error: error.message });

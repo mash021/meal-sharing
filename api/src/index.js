@@ -1,11 +1,14 @@
 import express from "express";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
-import mealsRouter from "./routers/meals.router.js"; // Meals-specific router
+import knex from "./database_client.js";
+import mealsRouter from "./routers/meals.js"; // Meals router
+import reservationsRouter from "./routers/reservations.js";
+import reviewsRouter from "./routers/reviews.js"; // Reviews router
 
-dotenv.config();
+dotenv.config(); // Load environment variables from .env file
 
-// Print environment variables for debugging
+// Print DB configuration for debugging
 console.log("Environment variables:", {
   DB_CLIENT: process.env.DB_CLIENT,
   DB_HOST: process.env.DB_HOST,
@@ -14,80 +17,111 @@ console.log("Environment variables:", {
   DB_DATABASE_NAME: process.env.DB_DATABASE_NAME,
 });
 
-import knex from "./database_client.js";
-
 const app = express();
 const apiRouter = express.Router();
 
+// Middleware for parsing JSON bodies
 app.use(bodyParser.json());
 
-// Health check – list all tables in the database
+// Mount routers
+app.use("/api/meals", mealsRouter);
+app.use("/api/reservations", reservationsRouter);
+app.use("/api/reviews", reviewsRouter);
+
+// GET /api/ - Health check: list all database tables
 apiRouter.get("/", async (req, res) => {
   const SHOW_TABLES_QUERY =
     process.env.DB_CLIENT === "pg"
       ? "SELECT * FROM pg_catalog.pg_tables;"
       : "SHOW TABLES;";
-  const [tables] = await knex.raw(SHOW_TABLES_QUERY);
-  res.json({ tables });
+  try {
+    const [tables] = await knex.raw(SHOW_TABLES_QUERY);
+    res.json({ tables });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Return all meals
+// GET /api/meals - Return all meals
 apiRouter.get("/meals", async (req, res) => {
-  const [meals] = await knex.raw("SELECT * FROM meal");
-  res.json(meals);
+  try {
+    const [meals] = await knex.raw("SELECT * FROM meal");
+    res.json(meals);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Return all reservations
+// GET /api/reservations - Return all reservations
 apiRouter.get("/reservations", async (req, res) => {
-  const [reservations] = await knex.raw("SELECT * FROM reservation");
-  res.json(reservations);
+  try {
+    const [reservations] = await knex.raw("SELECT * FROM reservation");
+    res.json(reservations);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Return all reviews
-apiRouter.get("/reviews", async (req, res) => {
-  const [reviews] = await knex.raw("SELECT * FROM review");
-  res.json(reviews);
-});
-
-// Return meals scheduled in the future
+// GET /api/future-meals - Meals scheduled after now
 apiRouter.get("/future-meals", async (req, res) => {
-  const [meals] = await knex.raw("SELECT * FROM meal WHERE `when` > NOW()");
-  res.json(meals);
+  try {
+    const [meals] = await knex.raw("SELECT * FROM meal WHERE `when` > NOW()");
+    res.json(meals);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Return meals from the past
+// GET /api/past-meals - Meals scheduled before now
 apiRouter.get("/past-meals", async (req, res) => {
-  const [meals] = await knex.raw("SELECT * FROM meal WHERE `when` < NOW()");
-  res.json(meals);
+  try {
+    const [meals] = await knex.raw("SELECT * FROM meal WHERE `when` < NOW()");
+    res.json(meals);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Return all meals ordered by ID
+// GET /api/all-meals - All meals ordered by ID
 apiRouter.get("/all-meals", async (req, res) => {
-  const [meals] = await knex.raw("SELECT * FROM meal ORDER BY id");
-  res.json(meals);
+  try {
+    const [meals] = await knex.raw("SELECT * FROM meal ORDER BY id");
+    res.json(meals);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Return the first meal (lowest ID)
+// GET /api/first-meal - Meal with lowest ID
 apiRouter.get("/first-meal", async (req, res) => {
-  const [meal] = await knex.raw("SELECT * FROM meal ORDER BY id ASC LIMIT 1");
-  if (!meal.length) {
-    return res.status(404).json({ error: "No meals found" });
+  try {
+    const [meal] = await knex.raw("SELECT * FROM meal ORDER BY id ASC LIMIT 1");
+    if (!meal.length) {
+      return res.status(404).json({ error: "No meals found" });
+    }
+    res.json(meal[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.json(meal[0]);
 });
 
-// Return the last meal (highest ID)
+// GET /api/last-meal - Meal with highest ID
 apiRouter.get("/last-meal", async (req, res) => {
-  const [meal] = await knex.raw("SELECT * FROM meal ORDER BY id DESC LIMIT 1");
-  if (!meal.length) {
-    return res.status(404).json({ error: "No meals found" });
+  try {
+    const [meal] = await knex.raw(
+      "SELECT * FROM meal ORDER BY id DESC LIMIT 1"
+    );
+    if (!meal.length) {
+      return res.status(404).json({ error: "No meals found" });
+    }
+    res.json(meal[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  res.json(meal[0]);
 });
 
-// Mount routers
-app.use("/api", apiRouter); // Main API endpoints
-app.use("/meals", mealsRouter); // Custom meals router
+// Mount all general routes under /api
+app.use("/api", apiRouter);
 
 // Start the server
 const PORT = process.env.PORT || 3000;

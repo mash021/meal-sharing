@@ -1,0 +1,56 @@
+Get all meals with price filter (maxPrice=20)
+This test showed meals that cost 20 or less
+Result showed 3 meals: Zereshk Polo (17), Ash Reshteh (10), and Baghali Polo (19)
+
+   curl "http://localhost:3000/api/meals?maxPrice=20" | json_pp
+
+Get all reviews
+This test retrieved all reviews from the database
+Result showed 5 reviews with different ratings and descriptions
+
+   curl http://localhost:3000/api/reviews | json_pp
+
+dd a new review
+This test created a new review for meal_id 1
+The review was successfully added with ID 6
+Apply to week3.text
+
+   curl -X POST -H "Content-Type: application/json" -d '{"title":"Great meal!","description":"The food was amazing","meal_id":1,"stars":5,"created_date":"2024-03-20"}' http://localhost:3000/api/reviews | json_pp
+
+
+Get meals with multiple filters
+This test combined several filters:
+maxPrice=20 (price less than or equal to 20)
+title=Polo (meals with "Polo" in the title)
+sortKey=price (sorted by price)
+sortDir=desc (descending order)
+Result showed 2 meals: Baghali Polo (19) and Zereshk Polo (17)
+
+   curl "http://localhost:3000/api/meals?maxPrice=20&title=Polo&sortKey=price&sortDir=desc" | json_pp
+
+
+Get reviews for a specific meal
+
+   curl http://localhost:3000/api/meals/1/reviews | json_pp
+
+
+Get a specific meal by ID
+
+   curl http://localhost:3000/api/meals/1 | json_pp
+
+Update a meal
+
+   curl -X PUT -H "Content-Type: application/json" -d '{"title":"Updated Meal","price":15}' http://localhost:3000/api/meals/1 | json_pp
+
+Delete a meal
+
+   curl -X DELETE http://localhost:3000/api/meals/1 | json_pp
+
+Get meals with available reservations
+
+   curl "http://localhost:3000/api/meals?availableReservations=true" | json_pp
+
+Get meals within a date range
+
+    curl "http://localhost:3000/api/meals?dateAfter=2024-01-01&dateBefore=2024-12-31" | json_pp
+    
