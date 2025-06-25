@@ -4,10 +4,10 @@ import "./HomePage.css";
 
 function HomePage() {
   return (
-    <div className="home-page">
-      <h1>Welcome to the Meal Sharing App</h1>
+    <>
+      
       <MealsList />
-    </div>
+    </>
   );
 }
 

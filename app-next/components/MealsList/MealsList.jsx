@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import "./MealsList.css";
+import Meal from "./Meal";
+import { Grid, Container, Typography, CircularProgress } from "@mui/material";
 
 const MealsList = () => {
   const [meals, setMeals] = useState([]);
@@ -22,23 +23,24 @@ const MealsList = () => {
     fetchMeals();
   }, []);
 
-  if (loading) return <p className="loading">Loading meals...</p>;
+  if (loading) return <CircularProgress sx={{ m: 4 }} />;
 
-  if (meals.length === 0) return <p className="no-meals">No meals available.</p>;
+  if (meals.length === 0)
+    return <Typography>No meals available.</Typography>;
 
   return (
-    <div className="meals-container">
-      <h2 className="meals-title">Available Meals</h2>
-      <div className="meals-grid">
+    <Container sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Available Meals
+      </Typography>
+      <Grid container spacing={3}>
         {meals.map((meal) => (
-          <div key={meal.id} className="meal-card">
-            <h3>{meal.title}</h3>
-            <p>{meal.description}</p>
-            <p className="meal-price">{meal.price} DKK</p>
-          </div>
+          <Grid item xs={12} sm={6} md={4} key={meal.id} sx={{ display: "flex" }}>
+            <Meal meal={meal} />
+          </Grid>
         ))}
-      </div>
-    </div>
+      </Grid>
+    </Container>
   );
 };
 
