@@ -2,33 +2,23 @@ import express from "express";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import knex from "./database_client.js";
-import mealsRouter from "./routers/meals.js"; // Meals router
+import mealsRouter from "./routers/meals.js";
 import reservationsRouter from "./routers/reservations.js";
-import reviewsRouter from "./routers/reviews.js"; // Reviews router
+import reviewsRouter from "./routers/reviews.js";
+import cors from "cors";
 
-dotenv.config(); // Load environment variables from .env file
-
-// Print DB configuration for debugging
-console.log("Environment variables:", {
-  DB_CLIENT: process.env.DB_CLIENT,
-  DB_HOST: process.env.DB_HOST,
-  DB_PORT: process.env.DB_PORT,
-  DB_USER: process.env.DB_USER,
-  DB_DATABASE_NAME: process.env.DB_DATABASE_NAME,
-});
+dotenv.config();
 
 const app = express();
 const apiRouter = express.Router();
 
-// Middleware for parsing JSON bodies
+app.use(cors());
 app.use(bodyParser.json());
 
-// Mount routers
 app.use("/api/meals", mealsRouter);
 app.use("/api/reservations", reservationsRouter);
 app.use("/api/reviews", reviewsRouter);
 
-// GET /api/ - Health check: list all database tables
 apiRouter.get("/", async (req, res) => {
   const SHOW_TABLES_QUERY =
     process.env.DB_CLIENT === "pg"
@@ -42,7 +32,6 @@ apiRouter.get("/", async (req, res) => {
   }
 });
 
-// GET /api/meals - Return all meals
 apiRouter.get("/meals", async (req, res) => {
   try {
     const [meals] = await knex.raw("SELECT * FROM meal");
@@ -52,7 +41,6 @@ apiRouter.get("/meals", async (req, res) => {
   }
 });
 
-// GET /api/reservations - Return all reservations
 apiRouter.get("/reservations", async (req, res) => {
   try {
     const [reservations] = await knex.raw("SELECT * FROM reservation");
@@ -62,7 +50,6 @@ apiRouter.get("/reservations", async (req, res) => {
   }
 });
 
-// GET /api/future-meals - Meals scheduled after now
 apiRouter.get("/future-meals", async (req, res) => {
   try {
     const [meals] = await knex.raw("SELECT * FROM meal WHERE `when` > NOW()");
@@ -72,7 +59,6 @@ apiRouter.get("/future-meals", async (req, res) => {
   }
 });
 
-// GET /api/past-meals - Meals scheduled before now
 apiRouter.get("/past-meals", async (req, res) => {
   try {
     const [meals] = await knex.raw("SELECT * FROM meal WHERE `when` < NOW()");
@@ -82,7 +68,6 @@ apiRouter.get("/past-meals", async (req, res) => {
   }
 });
 
-// GET /api/all-meals - All meals ordered by ID
 apiRouter.get("/all-meals", async (req, res) => {
   try {
     const [meals] = await knex.raw("SELECT * FROM meal ORDER BY id");
@@ -92,7 +77,6 @@ apiRouter.get("/all-meals", async (req, res) => {
   }
 });
 
-// GET /api/first-meal - Meal with lowest ID
 apiRouter.get("/first-meal", async (req, res) => {
   try {
     const [meal] = await knex.raw("SELECT * FROM meal ORDER BY id ASC LIMIT 1");
@@ -105,7 +89,6 @@ apiRouter.get("/first-meal", async (req, res) => {
   }
 });
 
-// GET /api/last-meal - Meal with highest ID
 apiRouter.get("/last-meal", async (req, res) => {
   try {
     const [meal] = await knex.raw(
@@ -120,11 +103,9 @@ apiRouter.get("/last-meal", async (req, res) => {
   }
 });
 
-// Mount all general routes under /api
 app.use("/api", apiRouter);
 
-// Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`✅ API server is running at http://localhost:${PORT}`);
 });
