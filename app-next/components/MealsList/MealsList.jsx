@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
+
 import Meal from "./Meal";
-import { Grid, Container, Typography, CircularProgress } from "@mui/material";
 
 const MealsList = () => {
   const [meals, setMeals] = useState([]);
@@ -11,10 +11,13 @@ const MealsList = () => {
     const fetchMeals = async () => {
       try {
         const response = await fetch("http://localhost:3001/api/meals");
+        if (!response.ok) {
+          throw new Error("Failed to fetch meals");
+        }
         const data = await response.json();
         setMeals(data);
       } catch (error) {
-        console.error("Failed to fetch meals:", error);
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -23,24 +26,25 @@ const MealsList = () => {
     fetchMeals();
   }, []);
 
-  if (loading) return <CircularProgress sx={{ m: 4 }} />;
+  if (loading) {
+    return <div style={{ padding: "20px" }}>Loading...</div>;
+  }
 
-  if (meals.length === 0)
-    return <Typography>No meals available.</Typography>;
+  if (meals.length === 0) {
+    return <div style={{ padding: "20px" }}>No meals available.</div>;
+  }
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Available Meals
-      </Typography>
-      <Grid container spacing={3}>
+    <div style={{ padding: "20px" }}>
+      <h2>Available Meals</h2>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
         {meals.map((meal) => (
-          <Grid item xs={12} sm={6} md={4} key={meal.id} sx={{ display: "flex" }}>
+          <div key={meal.id} style={{ flex: "1 0 30%", border: "1px solid #ccc", padding: "10px" }}>
             <Meal meal={meal} />
-          </Grid>
+          </div>
         ))}
-      </Grid>
-    </Container>
+      </div>
+    </div>
   );
 };
 
