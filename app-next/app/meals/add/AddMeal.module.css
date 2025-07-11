@@ -1,0 +1,143 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
+  animation: fadeIn 0.7s;
+}
+
+.card {
+  width: 100%;
+  max-width: 540px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 22px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  padding: 48px 40px 40px 40px;
+  margin: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border: 1.5px solid #e0e7ef;
+}
+
+.heading {
+  text-align: center;
+  font-weight: 800;
+  font-size: 2rem;
+  color: #22223b;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.label {
+  font-weight: 600;
+  color: #4a4e69;
+  font-size: 1rem;
+  margin-bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.inputRow {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  padding: 10px 14px;
+  border: 1.5px solid #c9c9c9;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: #f7f7fa;
+  color: #22223b;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 2px #f0f0f0;
+  font-family: inherit;
+}
+
+.input:focus,
+.textarea:focus {
+  border: 1.5px solid #4895ef;
+  box-shadow: 0 2px 8px #e0e7ef;
+  background: #f0f7ff;
+}
+
+.inputSmall {
+  max-width: 160px;
+  width: 100%;
+}
+
+.textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.button {
+  margin-top: 10px;
+  padding: 13px 0;
+  background: linear-gradient(90deg, #4361ee 0%, #4895ef 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #e0e7ef;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  letter-spacing: 0.5px;
+}
+
+.button:hover {
+  background: linear-gradient(90deg, #4895ef 0%, #4361ee 100%);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.error {
+  color: #e63946;
+  text-align: center;
+  margin-top: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 24px 8px 18px 8px;
+    max-width: 98vw;
+  }
+  .inputRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .inputSmall {
+    max-width: 100%;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

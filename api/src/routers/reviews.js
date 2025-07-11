@@ -1,7 +1,17 @@
 import express from "express";
 import db from "../database_client.js";
+import { z } from "zod";
 
 const router = express.Router();
+
+// Zod schema for review
+const reviewSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  meal_id: z.number().int().positive(),
+  stars: z.number().int().min(1).max(5),
+  created_date: z.string().min(1), // Should be ISO date string
+});
 
 // GET /api/reviews - Get all reviews
 router.get("/", async (req, res) => {
@@ -28,7 +38,11 @@ router.get("/meals/:meal_id/reviews", async (req, res) => {
 // POST /api/reviews - Create a new review
 router.post("/", async (req, res) => {
   try {
-    const [id] = await db("review").insert(req.body);
+    const parseResult = reviewSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.errors });
+    }
+    const [id] = await db("review").insert(parseResult.data);
     const newReview = await db("review").where({ id }).first();
     res.status(201).json(newReview);
   } catch (error) {
@@ -50,9 +64,13 @@ router.get("/:id", async (req, res) => {
 // PUT /api/reviews/:id - Update a review
 router.put("/:id", async (req, res) => {
   try {
+    const parseResult = reviewSchema.partial().safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.errors });
+    }
     const updated = await db("review")
       .where({ id: req.params.id })
-      .update(req.body);
+      .update(parseResult.data);
     if (!updated) return res.status(404).json({ error: "Review not found" });
     const updatedReview = await db("review")
       .where({ id: req.params.id })

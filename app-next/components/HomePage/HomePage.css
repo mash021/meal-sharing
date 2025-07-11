@@ -1,9 +1,20 @@
-.link {
-  display: flex;
-  margin: 5vh 0;
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: red;
 }
 
-.logo,
-.message {
-  margin: auto;
+.meals-list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.meal-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.meal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }

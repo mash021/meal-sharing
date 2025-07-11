@@ -1,7 +1,11 @@
-import HomePage from "@/components/HomePage/HomePage";
+import MealsList from "../components/MealsList/MealsList";
+// import Navigation from "@/components/Navigation/Navigation";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <HomePage />
+    <div>
+      {/* <Navigation /> */}
+      <MealsList limit={3} />
+    </div>
   );
 }
