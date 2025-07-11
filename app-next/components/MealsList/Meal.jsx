@@ -1,5 +1,6 @@
 import React from "react";
-import { Card, CardMedia, CardContent, Typography, Box } from "@mui/material";
+import Link from "next/link";
+import "./Meal.css";
 
 const imageMap = {
   1: "/images/gheymeh.jpg",
@@ -14,50 +15,23 @@ const Meal = ({ meal }) => {
   const imageUrl = imageMap[meal.id] || "/images/default.jpg";
 
   return (
-    <Card
-      sx={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        borderRadius: 2,
-        overflow: "hidden",
-        boxShadow: 3,
-      }}
-    >
-      <CardMedia
-        component="img"
-        image={imageUrl}
-        alt={meal.title}
-        sx={{
-          width: "100%",
-          height: 180,
-          objectFit: "cover",
-          objectPosition: "center",
-        }}
-      />
-      <CardContent
-        sx={{
-          flexGrow: 1,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          {meal.title}
-        </Typography>
-
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {meal.description}
-          </Typography>
-        </Box>
-
-        <Typography variant="subtitle1" color="primary" mt={2}>
-          {meal.price} DKK
-        </Typography>
-      </CardContent>
-    </Card>
+    <Link href={`/meals/${meal.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+      <div className="meal-inner" style={{ cursor: "pointer" }}>
+        <img src={imageUrl} alt={meal.title} className="meal-image" />
+        <div className="meal-content">
+          <h3 className="meal-title">{meal.title}</h3>
+          <p className="meal-description">{meal.description}</p>
+          <button className="meal-price">{meal.price} DKK</button>
+          <div style={{ marginTop: 12, fontWeight: 600, color: meal.availableSpots > 0 ? '#228B22' : '#B22222' }}>
+            {typeof meal.availableSpots === 'number'
+              ? meal.availableSpots > 0
+                ? `${meal.availableSpots} spots left`
+                : 'Fully booked'
+              : ''}
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 };
 

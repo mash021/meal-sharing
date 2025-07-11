@@ -1,8 +1,43 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+
 html,
-body,
-#root {
+body {
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 17px;
+  color: #22223b;
+  background: #f8fafc;
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
+}
+/* Container to center everything */
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Title styling */
+.home-container h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  color: #333;
+}
+
+/* Grid layout for meals list */
+.meals-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Optional: style individual meal cards */
+.meal-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.meal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
