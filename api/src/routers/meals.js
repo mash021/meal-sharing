@@ -1,19 +1,7 @@
 import express from "express";
 import db from "../database_client.js";
-import { z } from "zod";
 
 const router = express.Router();
-
-// Zod schema for meal
-const mealSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
-  location: z.string().min(1),
-  when: z.string().min(1), // Should be ISO date string
-  max_reservations: z.number().int().positive(),
-  price: z.number().positive(),
-  created_date: z.string().min(1), // Should be ISO date string
-});
 
 // GET /api/meals - Return all meals with query parameters
 router.get("/", async (req, res) => {
@@ -77,22 +65,7 @@ router.get("/", async (req, res) => {
     }
 
     const meals = await query;
-    // Fetch reservations for all meals
-    const mealIds = meals.map((meal) => meal.id);
-    const reservations = await db("reservation")
-      .whereIn("meal_id", mealIds)
-      .select("meal_id")
-      .sum({ guests: "number_of_guests" })
-      .groupBy("meal_id");
-    const reservationMap = {};
-    reservations.forEach((r) => {
-      reservationMap[r.meal_id] = Number(r.guests);
-    });
-    const mealsWithSpots = meals.map((meal) => ({
-      ...meal,
-      availableSpots: meal.max_reservations - (reservationMap[meal.id] || 0),
-    }));
-    res.json(mealsWithSpots);
+    res.json(meals);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -103,13 +76,7 @@ router.get("/:id", async (req, res) => {
   try {
     const meal = await db("meal").where({ id: req.params.id }).first();
     if (!meal) return res.status(404).json({ error: "Meal not found" });
-    const reservation = await db("reservation")
-      .where({ meal_id: meal.id })
-      .sum({ guests: "number_of_guests" })
-      .first();
-    const availableSpots =
-      meal.max_reservations - (Number(reservation.guests) || 0);
-    res.json({ ...meal, availableSpots });
+    res.json(meal);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -118,11 +85,7 @@ router.get("/:id", async (req, res) => {
 // POST /api/meals - Create new meal
 router.post("/", async (req, res) => {
   try {
-    const parseResult = mealSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({ error: parseResult.error.errors });
-    }
-    const [id] = await db("meal").insert(parseResult.data);
+    const [id] = await db("meal").insert(req.body);
     const newMeal = await db("meal").where({ id }).first();
     res.status(201).json(newMeal);
   } catch (error) {
@@ -133,13 +96,9 @@ router.post("/", async (req, res) => {
 // PUT /api/meals/:id - Update meal
 router.put("/:id", async (req, res) => {
   try {
-    const parseResult = mealSchema.partial().safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({ error: parseResult.error.errors });
-    }
     const updated = await db("meal")
       .where({ id: req.params.id })
-      .update(parseResult.data);
+      .update(req.body);
     if (!updated) return res.status(404).json({ error: "Meal not found" });
     const updatedMeal = await db("meal").where({ id: req.params.id }).first();
     res.json(updatedMeal);
