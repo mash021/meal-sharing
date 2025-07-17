@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import api from "../../utils/api";
 
 export default function MealDetailsPage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function MealDetailsPage() {
   useEffect(() => {
     if (!id) return;
     const fetchMeal = async () => {
-      const res = await fetch(`http://localhost:3001/api/meals/${id}`);
+      const res = await fetch(api(`/meals/${id}`));
       const data = await res.json();
       setMeal(data);
       setLoading(false);
@@ -30,7 +31,7 @@ export default function MealDetailsPage() {
   const handleReservationSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3001/api/reservations", {
+      const res = await fetch(api("/reservations"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -52,7 +53,7 @@ export default function MealDetailsPage() {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3001/api/reviews", {
+      const res = await fetch(api("/reviews"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

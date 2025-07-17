@@ -1,6 +1,38 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import api from "../../../utils/api";
+import styles from "./ReservationForm.module.css";
+
+// Add a StarRating component for clickable stars
+function StarRating({ value, onChange, editable = false }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 4,
+        cursor: editable ? "pointer" : "default",
+      }}
+    >
+      {[1, 2, 3, 4, 5].map((star) => (
+        <span
+          key={star}
+          onClick={editable ? () => onChange(star) : undefined}
+          style={{
+            color: star <= value ? "#fbbf24" : "#e5e7eb",
+            fontSize: "1.6rem",
+            transition: "color 0.2s",
+            userSelect: "none",
+          }}
+          role={editable ? "button" : undefined}
+          aria-label={editable ? `Set rating to ${star}` : undefined}
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export default function MealDetailPage() {
   const router = useRouter();
@@ -20,9 +52,18 @@ export default function MealDetailPage() {
   const [resLoading, setResLoading] = useState(false);
   const [resError, setResError] = useState("");
   const [resSuccess, setResSuccess] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [reviewForm, setReviewForm] = useState({
+    title: "",
+    description: "",
+    stars: 5,
+  });
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSuccess, setReviewSuccess] = useState("");
 
   useEffect(() => {
-    fetch(`http://localhost:3001/api/meals/${id}`)
+    fetch(api(`/meals/${id}`))
       .then((res) => res.json())
       .then((data) => {
         setMeal(data);
@@ -38,6 +79,15 @@ export default function MealDetailPage() {
       .catch(() => setError("Meal not found"));
   }, [id]);
 
+  // Fetch reviews for this meal
+  useEffect(() => {
+    if (!id) return;
+    fetch(api(`/meals/${id}/reviews`))
+      .then((res) => res.json())
+      .then((data) => setReviews(data))
+      .catch(() => setReviews([]));
+  }, [id, reviewSuccess]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -47,7 +97,7 @@ export default function MealDetailPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`http://localhost:3001/api/meals/${id}`, {
+      const res = await fetch(api(`/meals/${id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -71,7 +121,7 @@ export default function MealDetailPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`http://localhost:3001/api/meals/${id}`, {
+      const res = await fetch(api(`/meals/${id}`), {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete meal");
@@ -93,7 +143,7 @@ export default function MealDetailPage() {
     setResError("");
     setResSuccess("");
     try {
-      const res = await fetch("http://localhost:3001/api/reservations", {
+      const res = await fetch(api("/reservations"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -109,6 +159,36 @@ export default function MealDetailPage() {
       setResError(err.message || "Something went wrong");
     } finally {
       setResLoading(false);
+    }
+  };
+
+  const handleReviewChange = (e) => {
+    setReviewForm({ ...reviewForm, [e.target.name]: e.target.value });
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setReviewLoading(true);
+    setReviewError("");
+    setReviewSuccess("");
+    try {
+      const res = await fetch(api("/reviews"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...reviewForm,
+          meal_id: Number(id),
+          stars: Number(reviewForm.stars),
+          created_date: new Date().toISOString(),
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to submit review");
+      setReviewSuccess("Review submitted!");
+      setReviewForm({ title: "", description: "", stars: 5 });
+    } catch (err) {
+      setReviewError(err.message || "Something went wrong");
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -273,34 +353,30 @@ export default function MealDetailPage() {
           {error && <div style={{ color: "red" }}>{error}</div>}
           <hr style={{ margin: "32px 0 24px 0" }} />
           <h3>Reserve this meal</h3>
-          <form
-            onSubmit={handleResSubmit}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              marginTop: 8,
-            }}
-          >
-            <label>
+          <form onSubmit={handleResSubmit} className={styles.reservationForm}>
+            <label className={styles.label}>
               Name
               <input
                 name="name"
                 value={resForm.name}
                 onChange={handleResChange}
                 required
+                className={styles.input}
+                placeholder="Your name"
               />
             </label>
-            <label>
+            <label className={styles.label}>
               Phone
               <input
                 name="phone"
                 value={resForm.phone}
                 onChange={handleResChange}
                 required
+                className={styles.input}
+                placeholder="Your phone number"
               />
             </label>
-            <label>
+            <label className={styles.label}>
               Email
               <input
                 name="email"
@@ -308,9 +384,11 @@ export default function MealDetailPage() {
                 value={resForm.email}
                 onChange={handleResChange}
                 required
+                className={styles.input}
+                placeholder="Your email"
               />
             </label>
-            <label>
+            <label className={styles.label}>
               Number of Guests
               <input
                 name="number_of_guests"
@@ -319,28 +397,131 @@ export default function MealDetailPage() {
                 value={resForm.number_of_guests}
                 onChange={handleResChange}
                 required
+                className={styles.input}
+                placeholder="Guests"
               />
             </label>
             <button
               type="submit"
               disabled={resLoading}
-              style={{
-                padding: "10px 0",
-                background: "#4895ef",
-                color: "#fff",
-                border: "none",
-                borderRadius: 4,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              className={styles.button}
             >
               {resLoading ? "Reserving..." : "Reserve"}
             </button>
-            {resError && <div style={{ color: "#e63946" }}>{resError}</div>}
-            {resSuccess && <div style={{ color: "#2ecc40" }}>{resSuccess}</div>}
+            {resError && <div className={styles.error}>{resError}</div>}
+            {resSuccess && <div className={styles.success}>{resSuccess}</div>}
           </form>
         </>
       )}
+      {/* Review Section */}
+      <hr style={{ margin: "32px 0 24px 0" }} />
+      <h3 style={{ marginBottom: 12 }}>Reviews & Ratings</h3>
+      <div style={{ marginBottom: 24 }}>
+        {reviews.length === 0 ? (
+          <div style={{ color: "#888", textAlign: "center" }}>
+            No reviews yet.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            {reviews.map((r) => (
+              <div
+                key={r.id}
+                style={{
+                  background: "#f7f7fa",
+                  borderRadius: 10,
+                  padding: 16,
+                  boxShadow: "0 1px 4px #e0e7ef",
+                  border: "1px solid #e0e7ef",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginBottom: 4,
+                  }}
+                >
+                  <span style={{ fontWeight: 700, fontSize: 16 }}>
+                    {r.title}
+                  </span>
+                  <span style={{ color: "#fbbf24", fontSize: 18 }}>
+                    {"★".repeat(r.stars)}
+                    {"☆".repeat(5 - r.stars)}
+                  </span>
+                </div>
+                <div style={{ color: "#444", fontSize: 15 }}>
+                  {r.description}
+                </div>
+                <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
+                  {new Date(r.created_date).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <h3 style={{ marginTop: 40 }}>Leave a review</h3>
+      <form
+        onSubmit={handleReviewSubmit}
+        className={styles.reservationForm}
+        style={{ marginTop: 32 }}
+      >
+        <label className={styles.label}>
+          Title
+          <input
+            name="title"
+            value={reviewForm.title}
+            onChange={handleReviewChange}
+            required
+            className={styles.input}
+            placeholder="Review title"
+          />
+        </label>
+        <label className={styles.label}>
+          Description
+          <textarea
+            name="description"
+            value={reviewForm.description}
+            onChange={handleReviewChange}
+            required
+            className={styles.input}
+            placeholder="Your review..."
+            rows={3}
+          />
+        </label>
+        <label className={styles.label}>
+          Rating
+          <StarRating
+            value={reviewForm.stars}
+            onChange={(val) => setReviewForm((f) => ({ ...f, stars: val }))}
+            editable={true}
+          />
+        </label>
+        <button
+          type="submit"
+          className={styles.button}
+          disabled={reviewLoading}
+        >
+          {reviewLoading ? "Submitting..." : "Submit Review"}
+        </button>
+        {reviewError && <div className={styles.error}>{reviewError}</div>}
+        {reviewSuccess && <div className={styles.success}>{reviewSuccess}</div>}
+      </form>
+
+      <h3 style={{ marginTop: 40 }}>Reviews</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        {reviews.length === 0 && <div>No reviews yet.</div>}
+        {reviews.map((r) => (
+          <div key={r.id} className={styles.reviewCard}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <StarRating value={r.stars} />
+              <span style={{ fontWeight: 600 }}>{r.title}</span>
+            </div>
+            <div style={{ color: "#444", marginTop: 4 }}>{r.description}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

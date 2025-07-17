@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import api from "../../utils/api";
 
 // Replace with your Cloudinary unsigned upload preset and cloud name
 const CLOUDINARY_UPLOAD_PRESET = "ml_default";
@@ -61,7 +62,7 @@ export default function AddMealPage() {
       if (imageFile) {
         imageUrl = await uploadImageToCloudinary(imageFile);
       }
-      const res = await fetch("http://localhost:3001/api/meals", {
+      const res = await fetch(api("/meals"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

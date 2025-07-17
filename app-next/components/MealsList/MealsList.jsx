@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Meal from "./Meal";
 import "./MealsList.css";
+import api from "../../utils/api";
 
 const sortFields = [
   { value: "when", label: "Date" },
@@ -20,6 +21,7 @@ const MealsList = () => {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState("when");
   const [sortDir, setSortDir] = useState("asc");
+  const [visibleCount, setVisibleCount] = useState(9);
 
   const fetchMeals = async () => {
     setLoading(true);
@@ -29,7 +31,7 @@ const MealsList = () => {
       if (sortKey) params.append("sortKey", sortKey);
       if (sortDir) params.append("sortDir", sortDir);
       const response = await fetch(
-        `http://localhost:3001/api/meals?${params.toString()}`
+        api(`/meals?${params.toString()}`)
       );
       if (!response.ok) {
         throw new Error("Failed to fetch meals");
@@ -47,14 +49,6 @@ const MealsList = () => {
     fetchMeals();
     // eslint-disable-next-line
   }, [sortKey, sortDir]);
-
-  // Auto-refresh every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchMeals();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [search, sortKey, sortDir]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -94,12 +88,19 @@ const MealsList = () => {
       </form>
       <hr className="line-mute" />
       <div className="meals-grid">
-        {meals.map((meal) => (
-          <div key={meal.id} className="meal-card">
-            <Meal meal={meal} />
-          </div>
+        {meals.slice(0, visibleCount).map((meal) => (
+          <Meal key={meal.id} meal={meal} />
         ))}
       </div>
+      {visibleCount < meals.length && (
+        <button
+          className="load-more-btn"
+          onClick={() => setVisibleCount((c) => c + 9)}
+          aria-label="Load more meals"
+        >
+          <span className="load-more-icon">▼</span> Load More
+        </button>
+      )}
     </div>
   );
 };

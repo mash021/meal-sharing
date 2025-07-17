@@ -48,3 +48,40 @@
   margin-top: 2rem;
   font-size: 1.2rem;
 }
+
+.load-more-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 32px auto 0 auto;
+  padding: 14px 32px;
+  background: linear-gradient(90deg, #22223b 0%, #4a4e69 100%);
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(31, 38, 135, 0.1);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  outline: none;
+}
+
+.load-more-btn:hover,
+.load-more-btn:focus {
+  background: linear-gradient(90deg, #4a4e69 0%, #22223b 100%);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 4px 16px rgba(31, 38, 135, 0.18);
+}
+
+.load-more-icon {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  margin-right: 4px;
+  transition: transform 0.2s;
+}
+
+.load-more-btn:hover .load-more-icon {
+  transform: translateY(3px) scale(1.2);
+}

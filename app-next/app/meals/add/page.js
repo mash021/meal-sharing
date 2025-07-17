@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./AddMeal.module.css";
+import api from "../../../utils/api";
 
 export default function AddMealPage() {
   const [form, setForm] = useState({
@@ -25,7 +26,7 @@ export default function AddMealPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:3001/api/meals", {
+      const res = await fetch(api("/meals"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
