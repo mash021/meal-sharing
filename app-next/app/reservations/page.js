@@ -17,7 +17,7 @@ export default function ReservationsPage() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/meals")
+    fetch("https://meal-sharing-lvw1.onrender.com/api/meals")
       .then((res) => res.json())
       .then((data) => setMeals(data))
       .catch(() => setMeals([]));
@@ -33,14 +33,17 @@ export default function ReservationsPage() {
     setError("");
     setSuccess("");
     try {
-      const res = await fetch("http://localhost:3001/api/reservations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          number_of_guests: Number(form.number_of_guests),
-        }),
-      });
+      const res = await fetch(
+        "https://meal-sharing-lvw1.onrender.com/api/reservations",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...form,
+            number_of_guests: Number(form.number_of_guests),
+          }),
+        }
+      );
       if (!res.ok) throw new Error("Reservation failed");
       setSuccess("Reservation successful!");
       setForm({

@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: meal-sharing
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    branch: React2/final-aliSharifi
