@@ -2,28 +2,23 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import api from "../../../utils/api";
-import styles from "./ReservationForm.module.css";
+import styles from "./MealDetail.module.css";
 
-// Add a StarRating component for clickable stars
-function StarRating({ value, onChange, editable = false }) {
+// Enhanced StarRating component with better styling
+function StarRating({ value, onChange, editable = false, size = "1.2rem" }) {
   return (
     <div
-      style={{
-        display: "flex",
-        gap: 4,
-        cursor: editable ? "pointer" : "default",
-      }}
+      className={styles.starRating}
+      style={{ cursor: editable ? "pointer" : "default" }}
     >
       {[1, 2, 3, 4, 5].map((star) => (
         <span
           key={star}
           onClick={editable ? () => onChange(star) : undefined}
-          style={{
-            color: star <= value ? "#fbbf24" : "#e5e7eb",
-            fontSize: "1.6rem",
-            transition: "color 0.2s",
-            userSelect: "none",
-          }}
+          className={`${styles.star} ${
+            star <= value ? styles.filled : styles.empty
+          }`}
+          style={{ fontSize: size }}
           role={editable ? "button" : undefined}
           aria-label={editable ? `Set rating to ${star}` : undefined}
         >
@@ -61,6 +56,7 @@ export default function MealDetailPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState("");
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   useEffect(() => {
     fetch(api(`/meals/${id}`))
@@ -80,13 +76,20 @@ export default function MealDetailPage() {
   }, [id]);
 
   // Fetch reviews for this meal
-  useEffect(() => {
+  const fetchReviews = async () => {
     if (!id) return;
-    fetch(api(`/meals/${id}/reviews`))
-      .then((res) => res.json())
-      .then((data) => setReviews(data))
-      .catch(() => setReviews([]));
-  }, [id, reviewSuccess]);
+    try {
+      const res = await fetch(api(`/meals/${id}/reviews`));
+      const data = await res.json();
+      setReviews(data);
+    } catch (error) {
+      setReviews([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [id]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -179,12 +182,18 @@ export default function MealDetailPage() {
           ...reviewForm,
           meal_id: Number(id),
           stars: Number(reviewForm.stars),
-          created_date: new Date().toISOString(),
+          created_date: new Date().toISOString().split("T")[0], // Format as YYYY-MM-DD
         }),
       });
-      if (!res.ok) throw new Error("Failed to submit review");
-      setReviewSuccess("Review submitted!");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to submit review");
+      }
+      setReviewSuccess("Review submitted successfully!");
       setReviewForm({ title: "", description: "", stars: 5 });
+      setShowReviewForm(false);
+      // Refresh reviews after successful submission
+      fetchReviews();
     } catch (err) {
       setReviewError(err.message || "Something went wrong");
     } finally {
@@ -192,335 +201,356 @@ export default function MealDetailPage() {
     }
   };
 
-  if (error) return <div style={{ color: "red", padding: 24 }}>{error}</div>;
-  if (!meal) return <div style={{ padding: 24 }}>Loading...</div>;
+  if (error) return <div className={styles.errorContainer}>{error}</div>;
+  if (!meal) return <div className={styles.loadingContainer}>Loading...</div>;
+
+  // Calculate average rating
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + review.stars, 0) / reviews.length
+      : 0;
 
   return (
-    <div
-      style={{
-        maxWidth: 600,
-        margin: "2rem auto",
-        padding: 24,
-        background: "#fff",
-        borderRadius: 8,
-        boxShadow: "0 2px 8px #eee",
-      }}
-    >
-      {editMode ? (
-        <form
-          onSubmit={handleEdit}
-          style={{ display: "flex", flexDirection: "column", gap: 16 }}
-        >
-          <label>
-            Title
-            <input
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <label>
-            Description
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <label>
-            Location
-            <input
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <label>
-            Price
-            <input
-              name="price"
-              type="number"
-              value={form.price}
-              onChange={handleChange}
-              required
-              min="0"
-            />
-          </label>
-          <label>
-            Max Reservations
-            <input
-              name="max_reservations"
-              type="number"
-              value={form.max_reservations}
-              onChange={handleChange}
-              required
-              min="1"
-            />
-          </label>
-          <label>
-            Date
-            <input
-              name="date"
-              type="date"
-              value={form.date}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: "10px 0",
-              background: "#0070f3",
-              color: "#fff",
-              border: "none",
-              borderRadius: 4,
-              fontWeight: 600,
-              cursor: "pointer",
+    <div className={styles.container}>
+      {/* Hero Section with Full Image */}
+      <div className={styles.heroSection}>
+        <div className={styles.imageContainer}>
+          <img
+            src={meal.image_url || "/images/default.jpg"}
+            alt={meal.title}
+            className={styles.heroImage}
+            onError={(e) => {
+              e.target.src = "/images/default.jpg";
             }}
-          >
-            {loading ? "Saving..." : "Save Changes"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditMode(false)}
-            style={{
-              background: "#eee",
-              color: "#333",
-              border: "none",
-              borderRadius: 4,
-              padding: "10px 0",
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          {error && <div style={{ color: "red" }}>{error}</div>}
-        </form>
-      ) : (
-        <>
-          <h2>{meal.title}</h2>
-          <p>
-            <b>Description:</b> {meal.description}
-          </p>
-          <p>
-            <b>Location:</b> {meal.location}
-          </p>
-          <p>
-            <b>Price:</b> {meal.price}
-          </p>
-          <p>
-            <b>Max Reservations:</b> {meal.max_reservations}
-          </p>
-          <p>
-            <b>Date:</b> {meal.date?.slice(0, 10)}
-          </p>
-          <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+          />
+          <div className={styles.imageOverlay}>
+            <div className={styles.heroContent}>
+              <h1 className={styles.mealTitle}>{meal.title}</h1>
+              <div className={styles.mealMeta}>
+                <span className={styles.location}>📍 {meal.location}</span>
+                <span className={styles.price}>💰 ${meal.price}</span>
+                <span className={styles.date}>
+                  📅 {new Date(meal.date).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.contentWrapper}>
+        {/* Meal Details Section */}
+        <section className={styles.detailsSection}>
+          <div className={styles.sectionHeader}>
+            <h2>About This Meal</h2>
+            <div className={styles.actionButtons}>
+              <button
+                onClick={() => setEditMode(true)}
+                className={styles.editButton}
+              >
+                ✏️ Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                className={styles.deleteButton}
+                disabled={loading}
+              >
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+
+          {editMode ? (
+            <form onSubmit={handleEdit} className={styles.editForm}>
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label>Title</label>
+                  <input
+                    name="title"
+                    value={form.title}
+                    onChange={handleChange}
+                    required
+                    className={styles.input}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Location</label>
+                  <input
+                    name="location"
+                    value={form.location}
+                    onChange={handleChange}
+                    required
+                    className={styles.input}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Price</label>
+                  <input
+                    name="price"
+                    type="number"
+                    value={form.price}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    className={styles.input}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Max Reservations</label>
+                  <input
+                    name="max_reservations"
+                    type="number"
+                    value={form.max_reservations}
+                    onChange={handleChange}
+                    required
+                    min="1"
+                    className={styles.input}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Date</label>
+                  <input
+                    name="date"
+                    type="date"
+                    value={form.date}
+                    onChange={handleChange}
+                    required
+                    className={styles.input}
+                  />
+                </div>
+              </div>
+              <div className={styles.formGroup}>
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  required
+                  className={styles.textarea}
+                  rows={4}
+                />
+              </div>
+              <div className={styles.formActions}>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={styles.saveButton}
+                >
+                  {loading ? "Saving..." : "💾 Save Changes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditMode(false)}
+                  className={styles.cancelButton}
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+              {error && <div className={styles.error}>{error}</div>}
+            </form>
+          ) : (
+            <div className={styles.mealInfo}>
+              <p className={styles.description}>{meal.description}</p>
+              <div className={styles.infoGrid}>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>📍 Location:</span>
+                  <span className={styles.infoValue}>{meal.location}</span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>💰 Price:</span>
+                  <span className={styles.infoValue}>${meal.price}</span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>👥 Max Guests:</span>
+                  <span className={styles.infoValue}>
+                    {meal.max_reservations}
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>📅 Date:</span>
+                  <span className={styles.infoValue}>
+                    {new Date(meal.date).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Reviews Section */}
+        <section className={styles.reviewsSection}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2>Reviews & Ratings</h2>
+              <div className={styles.ratingSummary}>
+                <StarRating value={Math.round(averageRating)} size="1.5rem" />
+                <span className={styles.ratingText}>
+                  {averageRating.toFixed(1)} out of 5 ({reviews.length} reviews)
+                </span>
+              </div>
+            </div>
             <button
-              onClick={() => setEditMode(true)}
-              style={{
-                padding: "10px 20px",
-                background: "#0070f3",
-                color: "#fff",
-                border: "none",
-                borderRadius: 4,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              className={styles.addReviewButton}
             >
-              Edit
-            </button>
-            <button
-              onClick={handleDelete}
-              style={{
-                padding: "10px 20px",
-                background: "#e00",
-                color: "#fff",
-                border: "none",
-                borderRadius: 4,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-              disabled={loading}
-            >
-              Delete
+              {showReviewForm ? "❌ Cancel" : "✍️ Write Review"}
             </button>
           </div>
-          {error && <div style={{ color: "red" }}>{error}</div>}
-          <hr style={{ margin: "32px 0 24px 0" }} />
-          <h3>Reserve this meal</h3>
+
+          {/* Review Form */}
+          {showReviewForm && (
+            <div className={styles.reviewFormContainer}>
+              <form onSubmit={handleReviewSubmit} className={styles.reviewForm}>
+                <div className={styles.formGroup}>
+                  <label>Review Title</label>
+                  <input
+                    name="title"
+                    value={reviewForm.title}
+                    onChange={handleReviewChange}
+                    required
+                    className={styles.input}
+                    placeholder="Give your review a title..."
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Your Review</label>
+                  <textarea
+                    name="description"
+                    value={reviewForm.description}
+                    onChange={handleReviewChange}
+                    required
+                    className={styles.textarea}
+                    placeholder="Share your experience with this meal..."
+                    rows={4}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Rating</label>
+                  <StarRating
+                    value={reviewForm.stars}
+                    onChange={(val) =>
+                      setReviewForm((f) => ({ ...f, stars: val }))
+                    }
+                    editable={true}
+                    size="1.8rem"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className={styles.submitReviewButton}
+                  disabled={reviewLoading}
+                >
+                  {reviewLoading ? "Submitting..." : "📝 Submit Review"}
+                </button>
+                {reviewError && (
+                  <div className={styles.error}>{reviewError}</div>
+                )}
+                {reviewSuccess && (
+                  <div className={styles.success}>{reviewSuccess}</div>
+                )}
+              </form>
+            </div>
+          )}
+
+          {/* Reviews List */}
+          <div className={styles.reviewsList}>
+            {reviews.length === 0 ? (
+              <div className={styles.noReviews}>
+                <div className={styles.noReviewsIcon}>💬</div>
+                <p>No reviews yet. Be the first to share your experience!</p>
+              </div>
+            ) : (
+              reviews.map((review) => (
+                <div key={review.id} className={styles.reviewCard}>
+                  <div className={styles.reviewHeader}>
+                    <div className={styles.reviewTitle}>
+                      <h4>{review.title}</h4>
+                      <StarRating value={review.stars} size="1.2rem" />
+                    </div>
+                    <span className={styles.reviewDate}>
+                      {new Date(review.created_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className={styles.reviewDescription}>
+                    {review.description}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* Reservation Section */}
+        <section className={styles.reservationSection}>
+          <div className={styles.sectionHeader}>
+            <h2>Reserve This Meal</h2>
+            <p className={styles.sectionSubtitle}>
+              Secure your spot for this delicious meal experience
+            </p>
+          </div>
+
           <form onSubmit={handleResSubmit} className={styles.reservationForm}>
-            <label className={styles.label}>
-              Name
-              <input
-                name="name"
-                value={resForm.name}
-                onChange={handleResChange}
-                required
-                className={styles.input}
-                placeholder="Your name"
-              />
-            </label>
-            <label className={styles.label}>
-              Phone
-              <input
-                name="phone"
-                value={resForm.phone}
-                onChange={handleResChange}
-                required
-                className={styles.input}
-                placeholder="Your phone number"
-              />
-            </label>
-            <label className={styles.label}>
-              Email
-              <input
-                name="email"
-                type="email"
-                value={resForm.email}
-                onChange={handleResChange}
-                required
-                className={styles.input}
-                placeholder="Your email"
-              />
-            </label>
-            <label className={styles.label}>
-              Number of Guests
-              <input
-                name="number_of_guests"
-                type="number"
-                min="1"
-                value={resForm.number_of_guests}
-                onChange={handleResChange}
-                required
-                className={styles.input}
-                placeholder="Guests"
-              />
-            </label>
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label>Full Name</label>
+                <input
+                  name="name"
+                  value={resForm.name}
+                  onChange={handleResChange}
+                  required
+                  className={styles.input}
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Phone Number</label>
+                <input
+                  name="phone"
+                  value={resForm.phone}
+                  onChange={handleResChange}
+                  required
+                  className={styles.input}
+                  placeholder="Enter your phone number"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Email Address</label>
+                <input
+                  name="email"
+                  type="email"
+                  value={resForm.email}
+                  onChange={handleResChange}
+                  required
+                  className={styles.input}
+                  placeholder="Enter your email address"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Number of Guests</label>
+                <input
+                  name="number_of_guests"
+                  type="number"
+                  min="1"
+                  max={meal.max_reservations}
+                  value={resForm.number_of_guests}
+                  onChange={handleResChange}
+                  required
+                  className={styles.input}
+                  placeholder="How many guests?"
+                />
+              </div>
+            </div>
             <button
               type="submit"
               disabled={resLoading}
-              className={styles.button}
+              className={styles.reserveButton}
             >
-              {resLoading ? "Reserving..." : "Reserve"}
+              {resLoading ? "Reserving..." : "🎯 Reserve Now"}
             </button>
             {resError && <div className={styles.error}>{resError}</div>}
             {resSuccess && <div className={styles.success}>{resSuccess}</div>}
           </form>
-        </>
-      )}
-      {/* Review Section */}
-      <hr style={{ margin: "32px 0 24px 0" }} />
-      <h3 style={{ marginBottom: 12 }}>Reviews & Ratings</h3>
-      <div style={{ marginBottom: 24 }}>
-        {reviews.length === 0 ? (
-          <div style={{ color: "#888", textAlign: "center" }}>
-            No reviews yet.
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            {reviews.map((r) => (
-              <div
-                key={r.id}
-                style={{
-                  background: "#f7f7fa",
-                  borderRadius: 10,
-                  padding: 16,
-                  boxShadow: "0 1px 4px #e0e7ef",
-                  border: "1px solid #e0e7ef",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    marginBottom: 4,
-                  }}
-                >
-                  <span style={{ fontWeight: 700, fontSize: 16 }}>
-                    {r.title}
-                  </span>
-                  <span style={{ color: "#fbbf24", fontSize: 18 }}>
-                    {"★".repeat(r.stars)}
-                    {"☆".repeat(5 - r.stars)}
-                  </span>
-                </div>
-                <div style={{ color: "#444", fontSize: 15 }}>
-                  {r.description}
-                </div>
-                <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
-                  {new Date(r.created_date).toLocaleDateString()}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      <h3 style={{ marginTop: 40 }}>Leave a review</h3>
-      <form
-        onSubmit={handleReviewSubmit}
-        className={styles.reservationForm}
-        style={{ marginTop: 32 }}
-      >
-        <label className={styles.label}>
-          Title
-          <input
-            name="title"
-            value={reviewForm.title}
-            onChange={handleReviewChange}
-            required
-            className={styles.input}
-            placeholder="Review title"
-          />
-        </label>
-        <label className={styles.label}>
-          Description
-          <textarea
-            name="description"
-            value={reviewForm.description}
-            onChange={handleReviewChange}
-            required
-            className={styles.input}
-            placeholder="Your review..."
-            rows={3}
-          />
-        </label>
-        <label className={styles.label}>
-          Rating
-          <StarRating
-            value={reviewForm.stars}
-            onChange={(val) => setReviewForm((f) => ({ ...f, stars: val }))}
-            editable={true}
-          />
-        </label>
-        <button
-          type="submit"
-          className={styles.button}
-          disabled={reviewLoading}
-        >
-          {reviewLoading ? "Submitting..." : "Submit Review"}
-        </button>
-        {reviewError && <div className={styles.error}>{reviewError}</div>}
-        {reviewSuccess && <div className={styles.success}>{reviewSuccess}</div>}
-      </form>
-
-      <h3 style={{ marginTop: 40 }}>Reviews</h3>
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        {reviews.length === 0 && <div>No reviews yet.</div>}
-        {reviews.map((r) => (
-          <div key={r.id} className={styles.reviewCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <StarRating value={r.stars} />
-              <span style={{ fontWeight: 600 }}>{r.title}</span>
-            </div>
-            <div style={{ color: "#444", marginTop: 4 }}>{r.description}</div>
-          </div>
-        ))}
+        </section>
       </div>
     </div>
   );
