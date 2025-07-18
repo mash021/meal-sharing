@@ -98,6 +98,19 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/meals/:id/reviews - Get all reviews for a specific meal
+router.get("/:id/reviews", async (req, res) => {
+  try {
+    const reviews = await db("review")
+      .where({ meal_id: req.params.id })
+      .select("*")
+      .orderBy("created_date", "desc");
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/meals/:id - Get meal by ID
 router.get("/:id", async (req, res) => {
   try {
